@@ -10,7 +10,6 @@
 using namespace std;
 
 void tick (Vi2s_master* tb, VerilatedVcdC* tfp, int &counter) {
-	counter++;
 	tb->sck = 0;
 	tb->eval();
 
@@ -22,6 +21,7 @@ void tick (Vi2s_master* tb, VerilatedVcdC* tfp, int &counter) {
 	tb->sck = 0;
 	tb->eval();
 	tfp->dump(counter);
+	counter++;
 
 }
 
@@ -55,58 +55,35 @@ void i2s_master (Vi2s_master* tb, VerilatedVcdC* tfp, int &counter) {
 		mic_right.close();
 	}
 
-	/*
-	for (int i = 0; i < left_vector.size(); i++) {
-		//cout << left_vector[i] << "\n";
-		for (int j = 0; j < 16; j++) {
-			cout << ((left_vector[i]>>j)&(0x0001)) << "\n";
-		}
-		cout << "----------" << " #" << i << "----------" << "\n";
-	}
-	*/
-
 	// Loop to stream i2s data
-		// Send serialized left bitstream
-		//for (int i = 0; i < left_vector.size(); i++)
-		//tb->sck = 1;
-		//tick(tb, tfp, counter);
+	for (int i = 0; i < 2000; i++)
+	{
 
-		for (int i = 0; i < 2000; i++)
-		{
-			//cout << i << "\n";
-			//tb->sck = 1;
-			tb->ws = 0;
+		tb->ws = 0;
+		tick(tb, tfp, counter);
+
+		// Left i2s stream
+		for (int j = 0; j < 16; j++) {
+
+			tb->sd = (((left_vector[i]<<j)&(0x8000))>>15);
+
 			tick(tb, tfp, counter);
-			for (int j = 0; j < 16; j++) {
 
-				tb->sd = (((left_vector[i]<<j)&(0x8000))>>15);
-
-				tb->sck = 0;
-				tb->eval();
-				tfp->dump(counter);
-				counter++;
-
-				tb->sck = 1;
-				tb->eval();
-				tfp->dump(counter);
-				counter++;
-				//cout << (((left_vector[i]<<j)&(0x8000))>>15) << "\n";
-				//tick(tb, tfp, counter);
-				//tick(tb, tfp, counter);
-				//cout << counter << "\n";
-			}
-
-			tb->ws = 1;
-			tick(tb, tfp, counter);
-			for (int j = 0; j < 16; j++) {
-				tb->sd = (((right_vector[i]<<j)&(0x8000))>>15);
-
-				tick(tb, tfp, counter);
-				//tick(tb, tfp, counter);
-				//cout << counter << "\n";
-			}
-			tick(tb, tfp, counter);
 		}
+
+		tb->ws = 1;
+		tick(tb, tfp, counter);
+
+		// Right i2s stream
+		for (int j = 0; j < 16; j++) {
+
+			tb->sd = (((right_vector[i]<<j)&(0x8000))>>15);
+
+			tick(tb, tfp, counter);
+
+		}
+
+	}
 }
 
 int main () {
@@ -119,12 +96,7 @@ int main () {
 	tfp->open("out.vcd");
 	int counter = 0;
 
-		//counter++;
-
-		i2s_master(tb, tfp, counter);
-		
-		tb->eval();
-		tfp->dump(counter);
+	i2s_master(tb, tfp, counter);
 
 	tfp->close();
 	return(1);
