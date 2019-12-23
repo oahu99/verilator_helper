@@ -27,20 +27,46 @@ void tick (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int 
 
 	tfp->dump(counter);
 	tfp->flush();
+
 }
 
 void avalon_write (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int writedata) {
-	for (int i = 0; i < 15; i++) {
-
+	for (int i = 0; i < 2; i++) {
 		if (system_clk->falling_edge()) {
 			tb->AVL_WRITE = 1;
 			tb->AVL_CS = 1;
 			tb->AVL_WRITEDATA = writedata;
 			tb->AVL_ADDR = address;
 		}
-		tick(tb, tfp, counter, system_clk, i2s_clk);
+		//tick(tb, tfp, counter, system_clk, i2s_clk);
 	}
+	tb->AVL_WRITE = 0;
 	tb->AVL_CS = 0;
+	tb->AVL_ADDR = 0;
+	//tick(tb, tfp, counter, system_clk, i2s_clk);
+
+
+
+}
+
+int avalon_read (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int &bus_ready) {
+	if (!bus_ready) {
+		if (system_clk->falling_edge()) {
+			tb->AVL_READ = 1;
+			tb->AVL_CS = 1;
+			tb->AVL_ADDR = address;
+			bus_ready = 1;
+			return (0);
+		}
+	}
+	else {
+		tb->AVL_READ = 0;
+		tb->AVL_CS = 0;
+		tb->AVL_ADDR = 0;
+		bus_ready = 0;
+		return((int)tb->AVL_READDATA);
+	}
+	return(0);
 }
 
 void i2s_init (vector<int>* left_vector, vector<int>* right_vector) {
@@ -124,24 +150,103 @@ int main () {
 	int bit = 0;
 	int word = 0;
 
+	int done;
+
+	int readdata;
+
 	int START_ADDRESS = 0x01000000;
-	int RECORDING_LENGTH = 0x0041EB00;
+	int RECORDING_LENGTH = 0x00000200;
 
 	vector<int>* left_vector = new vector<int>;
 	vector<int>* right_vector = new vector<int>;
 
+	int bus_ready = 0;
+
 	i2s_init(left_vector, right_vector);
 
-	avalon_write(tb, tfp, counter, system_clk, i2s_clk, 1, START_ADDRESS); 
 
-	avalon_write(tb, tfp, counter, system_clk, i2s_clk, 2, RECORDING_LENGTH);
+	done = 0; //avalon_read(tb, tfp, counter, system_clk, i2s_clk, 2);
+	int read_address = 2; // address for done bit
 
-	avalon_write(tb, tfp, counter, system_clk, i2s_clk, 0, 1); // START bit
+	enum state {write_start1, 
+				write_start2, 
+				write_length1, 
+				write_length2, 
+				write_begin1, 
+				write_begin2,
+				read_mics1,
+				read_mics2,
+				read_done1,
+				read_done2}; // states for avalon r/w
 
-	while (counter < 100000000000) {
+	state curr_state = write_length1;
+	state next_state;
 
+
+	for (int i = 0; i < 3; i++) {
+		if (system_clk->falling_edge()) {
+			tb->AVL_WRITE = 1;
+			tb->AVL_CS = 1;
+			tb->AVL_WRITEDATA = START_ADDRESS;
+			tb->AVL_ADDR = 1;
+		}
+		if (i2s_clk->falling_edge() || counter == 0) {
+			i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		}
+		tick(tb, tfp, counter, system_clk, i2s_clk);
+	}
+
+	for (int i = 0; i < 3; i++) {
+		if (system_clk->falling_edge()) {
+			tb->AVL_WRITE = 1;
+			tb->AVL_CS = 1;
+			tb->AVL_WRITEDATA = RECORDING_LENGTH;
+			tb->AVL_ADDR = 2;
+		}
+		if (i2s_clk->falling_edge() || counter == 0) {
+			i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		}
+		tick(tb, tfp, counter, system_clk, i2s_clk);
+	}
+
+	for (int i = 0; i < 3; i++) {
+		if (system_clk->falling_edge()) {
+			tb->AVL_WRITE = 1;
+			tb->AVL_CS = 1;
+			tb->AVL_WRITEDATA = 1;
+			tb->AVL_ADDR = 0;
+		}
+		if (i2s_clk->falling_edge() || counter == 0) {
+			i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		}
+		tick(tb, tfp, counter, system_clk, i2s_clk);
+	}
+
+	tb->AVL_WRITE = 0;
+	tb->AVL_CS = 0;
+	i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+	tick(tb, tfp, counter, system_clk, i2s_clk);
+
+	while (done != 1) {
+
+		tb->AVL_CS = 1;
+		tb->AVL_READ = 1;
+		tb->AVL_ADDR = 2;
 		i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		tick(tb, tfp, counter, system_clk, i2s_clk);
 
+		done = tb->AVL_READDATA;
+		i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		tick(tb, tfp, counter, system_clk, i2s_clk);
+
+		tb->AVL_CS = 1;
+		tb->AVL_READ = 1;
+		tb->AVL_ADDR = 1;
+		i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
+		tick(tb, tfp, counter, system_clk, i2s_clk);
+
+		printf("%X \n",tb->AVL_READDATA);
+		i2s_master(tb, tfp, counter, system_clk, i2s_clk, left_vector, right_vector, word, bit);
 		tick(tb, tfp, counter, system_clk, i2s_clk);
 
 	}

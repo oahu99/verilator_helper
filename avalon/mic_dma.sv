@@ -299,18 +299,24 @@ always_ff @(posedge CLK) begin
 	if (half_way_ack | RESET) begin
 		half_way_latch <= 0;
 	end
-	else if (starting_address[NUM_MIC_PAIRS - 1] == start_address + 32'd34560000) begin
+	else if (num_samples <= (number_samples/2)) begin
 		half_way_latch <= 1;
 	end
+	// else if (starting_address[NUM_MIC_PAIRS - 1] == start_address + 4*number_samples && starting_address[NUM_MIC_PAIRS - 1] != 0) begin
+	// 	half_way_latch <= 1;
+	// end
 end
 
 always_ff @(posedge CLK) begin
 	if (end_ack | RESET) begin
 		end_latch <= 0;
 	end
-	else if (starting_address[NUM_MIC_PAIRS - 1] == start_address + 32'd38400000) begin
+	else if (num_samples == 0) begin
 		end_latch <= 1;
 	end
+	// else if (starting_address[NUM_MIC_PAIRS - 1] == start_address + 4*number_samples) begin
+	// 	end_latch <= 1;
+	// end
 end
 
 assign select = mic_count;

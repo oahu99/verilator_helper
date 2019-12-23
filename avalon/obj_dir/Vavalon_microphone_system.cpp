@@ -373,6 +373,15 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
     // ALWAYS at avalon_microphone_system.sv:75
     __Vdly__avalon_microphone_system__DOT__p_vol_5 
 	= ((IData)(vlTOPp->RESET) ? 0x14U : vlTOPp->vol_5);
+    // ALWAYS at mic_dma.sv:310
+    if (((IData)(vlTOPp->avalon_microphone_system__DOT__end_ack) 
+	 | (IData)(vlTOPp->avalon_microphone_system__DOT____Vcellinp__dma_yo__RESET))) {
+	vlTOPp->avalon_microphone_system__DOT__end_latch = 0U;
+    } else {
+	if ((0U == vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__num_samples)) {
+	    vlTOPp->avalon_microphone_system__DOT__end_latch = 1U;
+	}
+    }
     // ALWAYS at mic_dma.sv:78
     vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__prev_mic_count 
 	= ((IData)(vlTOPp->avalon_microphone_system__DOT____Vcellinp__dma_yo__RESET)
@@ -395,15 +404,13 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
 	    ? 0U : vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__num_samples);
     // ALWAYS at avalon_microphone_system.sv:254
     if (vlTOPp->RESET) {
-	vlTOPp->avalon_microphone_system__DOT__num_samps = 0U;
+	vlTOPp->avalon_microphone_system__DOT__start_addr = 0U;
     } else {
 	if (((IData)(vlTOPp->AVL_CS) & (IData)(vlTOPp->AVL_WRITE))) {
 	    if ((0U != (IData)(vlTOPp->AVL_ADDR))) {
-		if ((1U != (IData)(vlTOPp->AVL_ADDR))) {
-		    if ((2U == (IData)(vlTOPp->AVL_ADDR))) {
-			vlTOPp->avalon_microphone_system__DOT__num_samps 
-			    = vlTOPp->AVL_WRITEDATA;
-		    }
+		if ((1U == (IData)(vlTOPp->AVL_ADDR))) {
+		    vlTOPp->avalon_microphone_system__DOT__start_addr 
+			= vlTOPp->AVL_WRITEDATA;
 		}
 	    }
 	}
@@ -495,23 +502,14 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
     vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__prev_counter 
 	= ((IData)(vlTOPp->avalon_microphone_system__DOT____Vcellinp__dma_yo__RESET)
 	    ? 0U : vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__counter);
-    // ALWAYS at mic_dma.sv:307
-    if (((IData)(vlTOPp->avalon_microphone_system__DOT__end_ack) 
-	 | (IData)(vlTOPp->avalon_microphone_system__DOT____Vcellinp__dma_yo__RESET))) {
-	vlTOPp->avalon_microphone_system__DOT__end_latch = 0U;
-    } else {
-	if ((vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__starting_address
-	     [4U] == ((IData)(0x249f000U) + vlTOPp->avalon_microphone_system__DOT__start_addr))) {
-	    vlTOPp->avalon_microphone_system__DOT__end_latch = 1U;
-	}
-    }
     // ALWAYS at mic_dma.sv:298
     if (((IData)(vlTOPp->avalon_microphone_system__DOT__half_way_ack) 
 	 | (IData)(vlTOPp->avalon_microphone_system__DOT____Vcellinp__dma_yo__RESET))) {
 	vlTOPp->avalon_microphone_system__DOT__half_way_latch = 0U;
     } else {
-	if ((vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__starting_address
-	     [4U] == ((IData)(0x20f5800U) + vlTOPp->avalon_microphone_system__DOT__start_addr))) {
+	if ((vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__num_samples 
+	     <= (vlTOPp->avalon_microphone_system__DOT__num_samps 
+		 >> 1U))) {
 	    vlTOPp->avalon_microphone_system__DOT__half_way_latch = 1U;
 	}
     }
@@ -807,6 +805,37 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
 	    }
 	}
     }
+    // ALWAYS at avalon_microphone_system.sv:254
+    if ((1U & (~ (IData)(vlTOPp->RESET)))) {
+	if (((IData)(vlTOPp->AVL_CS) & (IData)(vlTOPp->AVL_WRITE))) {
+	    if ((0U != (IData)(vlTOPp->AVL_ADDR))) {
+		if ((1U != (IData)(vlTOPp->AVL_ADDR))) {
+		    if ((2U != (IData)(vlTOPp->AVL_ADDR))) {
+			if ((3U != (IData)(vlTOPp->AVL_ADDR))) {
+			    if ((4U != (IData)(vlTOPp->AVL_ADDR))) {
+				if ((5U != (IData)(vlTOPp->AVL_ADDR))) {
+				    if ((6U != (IData)(vlTOPp->AVL_ADDR))) {
+					if ((7U == (IData)(vlTOPp->AVL_ADDR))) {
+					    if ((1U 
+						 & vlTOPp->AVL_WRITEDATA)) {
+						if (
+						    (1U 
+						     & vlTOPp->AVL_WRITEDATA)) {
+						    vlTOPp->avalon_microphone_system__DOT__end_ack = 1U;
+						}
+					    }
+					}
+				    }
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	} else {
+	    vlTOPp->avalon_microphone_system__DOT__end_ack = 0U;
+	}
+    }
     vlTOPp->sample_ready = vlTOPp->avalon_microphone_system__DOT__ready_read_now;
     // ALWAYS at mic_dma.sv:109
     if ((1U & (~ ((IData)(vlTOPp->avalon_microphone_system__DOT__dma_yo__DOT__state) 
@@ -859,37 +888,6 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
 				    if ((6U != (IData)(vlTOPp->AVL_ADDR))) {
 					if ((7U == (IData)(vlTOPp->AVL_ADDR))) {
 					    if ((1U 
-						 & vlTOPp->AVL_WRITEDATA)) {
-						if (
-						    (1U 
-						     & vlTOPp->AVL_WRITEDATA)) {
-						    vlTOPp->avalon_microphone_system__DOT__end_ack = 1U;
-						}
-					    }
-					}
-				    }
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	} else {
-	    vlTOPp->avalon_microphone_system__DOT__end_ack = 0U;
-	}
-    }
-    // ALWAYS at avalon_microphone_system.sv:254
-    if ((1U & (~ (IData)(vlTOPp->RESET)))) {
-	if (((IData)(vlTOPp->AVL_CS) & (IData)(vlTOPp->AVL_WRITE))) {
-	    if ((0U != (IData)(vlTOPp->AVL_ADDR))) {
-		if ((1U != (IData)(vlTOPp->AVL_ADDR))) {
-		    if ((2U != (IData)(vlTOPp->AVL_ADDR))) {
-			if ((3U != (IData)(vlTOPp->AVL_ADDR))) {
-			    if ((4U != (IData)(vlTOPp->AVL_ADDR))) {
-				if ((5U != (IData)(vlTOPp->AVL_ADDR))) {
-				    if ((6U != (IData)(vlTOPp->AVL_ADDR))) {
-					if ((7U == (IData)(vlTOPp->AVL_ADDR))) {
-					    if ((1U 
 						 & (~ vlTOPp->AVL_WRITEDATA))) {
 						vlTOPp->avalon_microphone_system__DOT__half_way_ack = 1U;
 					    }
@@ -907,13 +905,15 @@ VL_INLINE_OPT void Vavalon_microphone_system::_sequent__TOP__4(Vavalon_microphon
     }
     // ALWAYS at avalon_microphone_system.sv:254
     if (vlTOPp->RESET) {
-	vlTOPp->avalon_microphone_system__DOT__start_addr = 0U;
+	vlTOPp->avalon_microphone_system__DOT__num_samps = 0U;
     } else {
 	if (((IData)(vlTOPp->AVL_CS) & (IData)(vlTOPp->AVL_WRITE))) {
 	    if ((0U != (IData)(vlTOPp->AVL_ADDR))) {
-		if ((1U == (IData)(vlTOPp->AVL_ADDR))) {
-		    vlTOPp->avalon_microphone_system__DOT__start_addr 
-			= vlTOPp->AVL_WRITEDATA;
+		if ((1U != (IData)(vlTOPp->AVL_ADDR))) {
+		    if ((2U == (IData)(vlTOPp->AVL_ADDR))) {
+			vlTOPp->avalon_microphone_system__DOT__num_samps 
+			    = vlTOPp->AVL_WRITEDATA;
+		    }
 		}
 	    }
 	}
