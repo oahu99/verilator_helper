@@ -97,7 +97,7 @@ int main () {
 			;
 		}
 	
-		if (i2s_clk->falling_edge())
+		if (i2s_clk->falling_edge() || i == 0)
 		{
 			i2s_slave->i2s_stream();
 		}
