@@ -15,10 +15,9 @@ class I2S_SLAVE {
 
 	///////LOCAL VARIABLES////////////
 	// states for i2s tx state machine
-	enum state { idle, tx_l, tx_r};
-	state curr_state, next_state;
+	enum state { idle, tx_l, tx_r} curr_state, next_state;
 	// counters for transmitting bits/words
-	int bit = 0, word = 0;
+	int bit, word;
 	// vectors for left and right words
 	vector<int>* left_vector = new vector<int>;
 	vector<int>* right_vector = new vector<int>;
@@ -28,7 +27,7 @@ class I2S_SLAVE {
 	void i2s_stream(
 		// state &next_state, 
 		// 			state &curr_state, 
-		 			bool clk_edge 
+		// 			bool clk_edge 
 		// 			bool &scl, 
 		// 			bool &sda, 
 		// 			int &bit, 
@@ -41,7 +40,9 @@ class I2S_SLAVE {
 // initialize vectors with right/left channel
 void I2S_SLAVE::i2s_init () {
 
-	next_state = tx_l;
+	next_state = curr_state = tx_l;
+	bit = 0;
+	word = 0;
 
 	ifstream mic_left ("MIC_1_LEFT.dat");
 	ifstream mic_right ("MIC_1_RIGHT.dat");
@@ -73,7 +74,7 @@ void I2S_SLAVE::i2s_init () {
 void I2S_SLAVE::i2s_stream(	
 	// state &next_state, 
 	// 						state &curr_state, 
-	 						bool clk_edge 
+	// 						bool clk_edge 
 	// 						bool &scl, 
 	// 						bool &sda, 
 	// 						int &bit, 
@@ -82,26 +83,27 @@ void I2S_SLAVE::i2s_stream(
 	// 						vector<int>* right_vector
 							)
 {	
-
-	if (clk_edge) // logic on clock rising edge
+	curr_state = next_state;
+	// block for next state logic and signals
+	//cout << bit << "\n";
+	switch (curr_state)
 	{
-		curr_state = next_state;
-		// block for next state logic and signals
-		cout << bit << "\n";
-		switch (curr_state)
-		{
-			idle 	: 	next_state = (word == 0) ? tx_l : idle; 
-						break;
-			tx_l 	: 	cout << "tx_l \n";
-						next_state = (bit == 15) ? tx_r : tx_l; 
-						sda = left_vector->at(word);//(((left_vector->at(word)<<bit)&(0x8000))>>15); // assert bit on sda
-						bit++;
-						break;
-			tx_r 	: 	next_state = (bit == 32) ? tx_l : tx_r; 
-						sda = (((right_vector->at(word)<<(bit-16))&(0x8000))>>15);
-						word = (bit == 32) ? word++ : word;
-						bit = (bit == 32) ? 0 : bit++;
-						break;
-		}
+		case idle 	: 	
+					//cout << "idle \n";
+					next_state = (word == 0) ? tx_l : idle; 
+					break;
+		case tx_l 	: 	
+					//cout << "tx_l \n";
+					next_state = (bit == 15) ? tx_r : tx_l; 
+					sda = (((left_vector->at(word)<<bit)&(0x8000))>>15); // assert bit on sda
+					bit++;
+					break;
+		case tx_r 	: 	
+					//cout << "tx_r \n";
+					next_state = (bit == 31) ? tx_l : tx_r; 
+					sda = (((right_vector->at(word)<<(bit-16))&(0x8000))>>15);
+					word = (bit == 31) ? word+1 : word;
+					bit = (bit == 31) ? 0 : bit+1;
+					break;
 	}
 }

@@ -90,12 +90,22 @@ int main () {
 
 	i2s_slave->i2s_init();
 
-	for (int i = 0; i < 1000000; i++) {
+	for (int i = 0; i < 1000000000; i++) {
+
+		if (system_clk->falling_edge())
+		{
+			;
+		}
+	
+		if (i2s_clk->falling_edge())
+		{
+			i2s_slave->i2s_stream();
+		}
+
+		tb->GPIO_DIN1 = i2s_slave->sda;
+		tb->AUD_ADCLRCK = (i2s_slave->next_state == I2S_SLAVE::tx_r) ? 1 : 0;
+
 		tick(tb, tfp, counter, system_clk, i2s_clk);
-		i2s_slave->i2s_stream(i2s_clk->falling_edge());
-		//cout << i2s_slave->clk_edge << "\n";
-		//cout << i2s_slave->left_vector->at(i) << "\n";
-		cout << i2s_clk->falling_edge() << "\n";
 	}
 
 	tfp->close();
