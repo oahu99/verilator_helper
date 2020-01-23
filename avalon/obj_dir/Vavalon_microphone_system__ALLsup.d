@@ -6,5 +6,7 @@ Vavalon_microphone_system__ALLsup.o: \
  /usr/local/share/verilator/include/verilated.h \
  Vavalon_microphone_system__Syms.h \
  /usr/local/share/verilator/include/verilated.h \
- Vavalon_microphone_system.h Vavalon_microphone_system__Syms.cpp \
+ Vavalon_microphone_system.h \
+ /usr/local/share/verilator/include/verilated_threads.h \
+ Vavalon_microphone_system__Syms.cpp \
  Vavalon_microphone_system__Trace__Slow.cpp

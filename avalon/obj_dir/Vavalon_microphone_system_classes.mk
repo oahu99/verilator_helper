@@ -8,7 +8,7 @@
 # Coverage output mode?  0/1 (from --coverage)
 VM_COVERAGE = 0
 # Threaded output mode?  0/1/N threads (from --threads)
-VM_THREADS = 0
+VM_THREADS = 4
 # Tracing output mode?  0/1 (from --trace)
 VM_TRACE = 1
 # Tracing threadeds output mode?  0/1 (from --trace-fst-thread)
@@ -35,6 +35,7 @@ VM_SUPPORT_SLOW += \
 VM_GLOBAL_FAST += \
 	verilated \
 	verilated_vcd_c \
+	verilated_threads \
 
 # Global classes, need linked once per executable, non-fast-path, compile with low/medium optimization
 VM_GLOBAL_SLOW += \
