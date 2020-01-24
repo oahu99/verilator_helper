@@ -4,8 +4,8 @@
 // Internal details; most calling programs do not need this header,
 // unless using verilator public meta comments.
 
-#ifndef _Vavalon_microphone_system__Syms_H_
-#define _Vavalon_microphone_system__Syms_H_
+#ifndef _VAVALON_MICROPHONE_SYSTEM__SYMS_H_
+#define _VAVALON_MICROPHONE_SYSTEM__SYMS_H_  // guard
 
 #include "verilated.h"
 

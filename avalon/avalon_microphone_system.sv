@@ -134,6 +134,7 @@ begin
 	end
 end
 //////////////////////////////////////////////////
+
 logic fin_signal;
 logic [2:0] mic_sel;
 logic stream_control;

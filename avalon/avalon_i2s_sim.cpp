@@ -8,6 +8,7 @@
 #include "verilated_vcd_c.h"
 #include "tbclock.h"
 #include "i2s_slave.hpp"
+#include "avalon_bus.hpp"
 
 using namespace std;
 
@@ -31,44 +32,44 @@ void tick (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int 
 
 }
 
-void avalon_write (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int writedata) {
-	for (int i = 0; i < 2; i++) {
-		if (system_clk->falling_edge()) {
-			tb->AVL_WRITE = 1;
-			tb->AVL_CS = 1;
-			tb->AVL_WRITEDATA = writedata;
-			tb->AVL_ADDR = address;
-		}
-		//tick(tb, tfp, counter, system_clk, i2s_clk);
-	}
-	tb->AVL_WRITE = 0;
-	tb->AVL_CS = 0;
-	tb->AVL_ADDR = 0;
-	//tick(tb, tfp, counter, system_clk, i2s_clk);
+// void avalon_write (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int writedata) {
+// 	for (int i = 0; i < 2; i++) {
+// 		if (system_clk->falling_edge()) {
+// 			tb->AVL_WRITE = 1;
+// 			tb->AVL_CS = 1;
+// 			tb->AVL_WRITEDATA = writedata;
+// 			tb->AVL_ADDR = address;
+// 		}
+// 		//tick(tb, tfp, counter, system_clk, i2s_clk);
+// 	}
+// 	tb->AVL_WRITE = 0;
+// 	tb->AVL_CS = 0;
+// 	tb->AVL_ADDR = 0;
+// 	//tick(tb, tfp, counter, system_clk, i2s_clk);
 
 
 
-}
+// }
 
-int avalon_read (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int &bus_ready) {
-	if (!bus_ready) {
-		if (system_clk->falling_edge()) {
-			tb->AVL_READ = 1;
-			tb->AVL_CS = 1;
-			tb->AVL_ADDR = address;
-			bus_ready = 1;
-			return (0);
-		}
-	}
-	else {
-		tb->AVL_READ = 0;
-		tb->AVL_CS = 0;
-		tb->AVL_ADDR = 0;
-		bus_ready = 0;
-		return((int)tb->AVL_READDATA);
-	}
-	return(0);
-}
+// int avalon_read (Vavalon_microphone_system* tb, VerilatedVcdC* tfp, unsigned long int &counter, TBCLOCK* system_clk, TBCLOCK* i2s_clk, int address, int &bus_ready) {
+// 	if (!bus_ready) {
+// 		if (system_clk->falling_edge()) {
+// 			tb->AVL_READ = 1;
+// 			tb->AVL_CS = 1;
+// 			tb->AVL_ADDR = address;
+// 			bus_ready = 1;
+// 			return (0);
+// 		}
+// 	}
+// 	else {
+// 		tb->AVL_READ = 0;
+// 		tb->AVL_CS = 0;
+// 		tb->AVL_ADDR = 0;
+// 		bus_ready = 0;
+// 		return((int)tb->AVL_READDATA);
+// 	}
+// 	return(0);
+// }
 	
 
 int main () {
@@ -78,7 +79,7 @@ int main () {
 
 	TBCLOCK* system_clk = new TBCLOCK(20000); // 50 MHz
 	TBCLOCK* i2s_clk = new TBCLOCK(325521); // 3.072 MHz
-
+	AVALON_MASTER* avalon_master = new AVALON_MASTER;
 	Verilated::traceEverOn(true);
 	VerilatedVcdC* tfp = new VerilatedVcdC();
 	tb->trace(tfp, 99);
@@ -90,20 +91,26 @@ int main () {
 
 	i2s_slave->i2s_init();
 
-	for (int i = 0; i < 1000000000; i++) {
+	while(counter < 100000000000) {
 
 		if (system_clk->falling_edge())
 		{
-			;
+			avalon_master->avl_read(1);
 		}
 	
-		if (i2s_clk->falling_edge() || i == 0)
+		if (i2s_clk->falling_edge() || counter == 0)
 		{
 			i2s_slave->i2s_stream();
 		}
 
 		tb->GPIO_DIN1 = i2s_slave->sda;
 		tb->AUD_ADCLRCK = (i2s_slave->next_state == I2S_SLAVE::tx_r) ? 1 : 0;
+
+		tb->AVL_READ = avalon_master->AVL_READ;
+		tb->AVL_WRITE = avalon_master->AVL_WRITE;
+		tb->AVL_WRITEDATA = avalon_master->AVL_WRITEDATA;
+		tb->AVL_CS = avalon_master->AVL_CS;
+		tb->AVL_ADDR = avalon_master->AVL_ADDR;
 
 		tick(tb, tfp, counter, system_clk, i2s_clk);
 	}

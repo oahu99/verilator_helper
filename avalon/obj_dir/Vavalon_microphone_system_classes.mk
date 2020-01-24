@@ -8,7 +8,7 @@
 # Coverage output mode?  0/1 (from --coverage)
 VM_COVERAGE = 0
 # Threaded output mode?  0/1/N threads (from --threads)
-VM_THREADS = 4
+VM_THREADS = 32
 # Tracing output mode?  0/1 (from --trace)
 VM_TRACE = 1
 # Tracing threadeds output mode?  0/1 (from --trace-fst-thread)
